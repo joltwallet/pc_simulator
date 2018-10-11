@@ -13,13 +13,8 @@
 #include <SDL2/SDL.h>
 #include "lvgl/lvgl.h"
 #include "lv_drivers/display/monitor.h"
-#include "lv_drivers/indev/mouse.h"
-#include "lv_drivers/indev/encoder.h"
 #include "lv_drivers/indev/keyboard.h"
-#include "lv_examples/lv_apps/demo/demo.h"
-#include "lv_examples/lv_apps/benchmark/benchmark.h"
-#include "lv_examples/lv_tests/lv_test_theme/lv_test_theme.h"
-#include "lv_examples/lv_tests/lv_test_group/lv_test_group.h"
+#include "jolt_gui/jolt_gui.h"
 
 /*********************
  *      DEFINES
@@ -46,6 +41,7 @@ static void memory_monitor(void * param);
 /**********************
  *  STATIC VARIABLES
  **********************/
+static lv_indev_t *emulated_kp_indev;
 
 /**********************
  *      MACROS
@@ -66,17 +62,11 @@ int main(int argc, char ** argv)
     /*Initialize the HAL (display, input devices, tick) for LittlevGL*/
     hal_init();
 
-    /*Load a demo*/
-    demo_create();
+    /*Load Jolt GUI*/
+    jolt_gui_create(emulated_kp_indev);
 
     /*Try the benchmark to see how fast your GUI is*/
 //    benchmark_create();
-
-    /*Check the themes too*/
-//    lv_test_theme_1(lv_theme_night_init(220, NULL));
-
-    /* A keyboard and encoder (mouse wheel) control example*/
-//    lv_test_group_1();
 
     while(1) {
         /* Periodically call the lv_task handler.
@@ -128,20 +118,13 @@ static void hal_init(void)
     disp_drv.disp_map = monitor_map;        /*Used when `LV_VDB_SIZE == 0` in lv_conf.h (unbuffered drawing)*/
     lv_disp_drv_register(&disp_drv);
 
-    /* Add the mouse as input device
-     * Use the 'mouse' driver which reads the PC's mouse*/
-    mouse_init();
+    /* Add the keyboard */
+    keyboard_init();
     lv_indev_drv_t indev_drv;
-    lv_indev_drv_init(&indev_drv);          /*Basic initialization*/
-    indev_drv.type = LV_INDEV_TYPE_POINTER;
-    indev_drv.read = mouse_read;         /*This function will be called periodically (by the library) to get the mouse position and state*/
-    lv_indev_t * mouse_indev = lv_indev_drv_register(&indev_drv);
-
-    /*Set a cursor for the mouse*/
-    LV_IMG_DECLARE(mouse_cursor_icon);                          /*Declare the image file.*/
-    lv_obj_t * cursor_obj =  lv_img_create(lv_scr_act(), NULL); /*Create an image object for the cursor */
-    lv_img_set_src(cursor_obj, &mouse_cursor_icon);             /*Set the image source*/
-    lv_indev_set_cursor(mouse_indev, cursor_obj);               /*Connect the image  object to the driver*/
+    lv_indev_drv_init(&indev_drv);
+    indev_drv.type = LV_INDEV_TYPE_KEYPAD;
+    indev_drv.read = keyboard_read;
+    emulated_kp_indev = lv_indev_drv_register(&indev_drv);
 
     /* Tick init.
      * You have to call 'lv_tick_inc()' in periodically to inform LittelvGL about how much time were elapsed
