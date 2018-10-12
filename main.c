@@ -15,6 +15,7 @@
 #include "lv_drivers/display/monitor.h"
 #include "lv_drivers/indev/keyboard.h"
 #include "jolt_gui/jolt_gui.h"
+#include "jolt_gui/test_stubs.h"
 
 /*********************
  *      DEFINES
@@ -61,6 +62,12 @@ int main(int argc, char ** argv)
 
     /*Initialize the HAL (display, input devices, tick) for LittlevGL*/
     hal_init();
+
+    /* Initialize Hardware Monitors */
+    hardware_monitors_init();
+
+    /* Start the PC_SIMULATOR equivalent hardware monitor task */
+    lv_task_create(&hardware_monitors_update, 1200, LV_TASK_PRIO_LOW, NULL);
 
     /*Load Jolt GUI*/
     jolt_gui_create(emulated_kp_indev);
